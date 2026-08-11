@@ -1,0 +1,8 @@
+﻿<Solution>
+  <Configurations>
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="MAT0943Net.csproj" Id="4f11e521-a9e7-4ae7-b01a-4899b6f0b931">
+    <Platform Solution="*|x86" Project="x86" />
+  </Project>
+</Solution>

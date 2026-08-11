@@ -1,0 +1,245 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProjectGuid>{4F11E521-A9E7-4AE7-B01A-4899B6F0B931}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>MAT0943Net</RootNamespace>
+    <AssemblyName>MAT0943Net</AssemblyName>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x86\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+    <LangVersion>7.3</LangVersion>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
+    <OutputPath>bin\x86\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+    <LangVersion>7.3</LangVersion>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="ExcelDataReader, Version=3.9.0.0, Culture=neutral, PublicKeyToken=93517dbe6a4012fa, processorArchitecture=MSIL">
+      <HintPath>packages\ExcelDataReader.3.9.0\lib\net462\ExcelDataReader.dll</HintPath>
+    </Reference>
+    <Reference Include="ExcelDataReader.DataSet, Version=3.9.0.0, Culture=neutral, PublicKeyToken=93517dbe6a4012fa, processorArchitecture=MSIL">
+      <HintPath>packages\ExcelDataReader.DataSet.3.9.0\lib\net462\ExcelDataReader.DataSet.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Deployment" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>packages\System.ValueTuple.4.5.0\lib\net47\System.ValueTuple.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="CalculadorTarifes\Controls\ControlCercaArticles.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="CalculadorTarifes\Diagnostics\AutoprovaMotorCalculTarifes.cs" />
+    <Compile Include="CalculadorTarifes\Diagnostics\AutoprovaRegressioMotorsTarifes.cs" />
+    <Compile Include="CalculadorTarifes\FrmCalculadorTarifes.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="CalculadorTarifes\FrmCalculadorTarifes.Designer.cs">
+      <DependentUpon>FrmCalculadorTarifes.cs</DependentUpon>
+    </Compile>
+    <Compile Include="CalculadorTarifes\Infrastructure\Connections\ServeiResolucioConnexioA3Erp.cs" />
+    <Compile Include="CalculadorTarifes\Infrastructure\Data\RepositoriAplicacioTarifes.cs" />
+    <Compile Include="CalculadorTarifes\Infrastructure\Data\RepositoriArticlesCalculTarifes.cs" />
+    <Compile Include="CalculadorTarifes\Infrastructure\Logging\CalculadorTarifesLogger.cs" />
+    <Compile Include="CalculadorTarifes\Infrastructure\Logging\ConfiguracioLogCalculadorTarifes.cs" />
+    <Compile Include="CalculadorTarifes\Infrastructure\Logging\RepositoriConfiguracioLogCalculadorTarifes.cs" />
+    <Compile Include="CalculadorTarifes\Integration\PuntEntradaCalculador.cs" />
+    <Compile Include="CalculadorTarifes\Models\ArticleCalculTarifes.cs" />
+    <Compile Include="CalculadorTarifes\Models\ContextCalculadorA3Erp.cs" />
+    <Compile Include="CalculadorTarifes\Models\DefinicioPlantillaTarifes.cs" />
+    <Compile Include="CalculadorTarifes\Models\ParametresCalculTarifes.cs" />
+    <Compile Include="CalculadorTarifes\Models\ProgresAplicacioTarifes.cs" />
+    <Compile Include="CalculadorTarifes\Models\ResultatAplicacioTarifes.cs" />
+    <Compile Include="CalculadorTarifes\Models\ResultatCalculTarifes.cs" />
+    <Compile Include="CalculadorTarifes\Models\ResultatResolucioConnexio.cs" />
+    <Compile Include="CalculadorTarifes\Models\ResultatSimulacioAplicacioTarifes.cs" />
+    <Compile Include="CalculadorTarifes\Models\TipusPlantillaTarifes.cs" />
+    <Compile Include="CalculadorTarifes\Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="CalculadorTarifes\Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+    <Compile Include="CalculadorTarifes\Services\CatalegPlantillesTarifes.cs" />
+    <Compile Include="CalculadorTarifes\Services\MotorCalculTarifes.cs" />
+    <Compile Include="CalculadorTarifes\Services\MotorCalculTarifesConfigurable.cs" />
+    <Compile Include="CalculadorTarifes\Services\ServeiCatalegFormulesConfigurables.cs" />
+    <Compile Include="GestorFormulesTarifes\Dades\RepositoriFormulesTarifes.cs" />
+    <Compile Include="GestorFormulesTarifes\Diagnostics\AutoprovaFormulesConfigurables.cs" />
+    <Compile Include="GestorFormulesTarifes\Diagnostics\AutoprovaMotorExpressions.cs" />
+    <Compile Include="GestorFormulesTarifes\Formularis\FrmEdicioFormulaTarifa.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="GestorFormulesTarifes\Formularis\FrmEdicioFormulaTarifa.Designer.cs">
+      <DependentUpon>FrmEdicioFormulaTarifa.cs</DependentUpon>
+    </Compile>
+    <Compile Include="GestorFormulesTarifes\Formularis\ModeEdicioFormulaTarifa.cs" />
+    <Compile Include="GestorFormulesTarifes\FrmGestorFormulesTarifes.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="GestorFormulesTarifes\FrmGestorFormulesTarifes.Designer.cs">
+      <DependentUpon>FrmGestorFormulesTarifes.cs</DependentUpon>
+    </Compile>
+    <Compile Include="GestorFormulesTarifes\Infrastructure\Logging\ConfiguracioLogGestorFormulesTarifes.cs" />
+    <Compile Include="GestorFormulesTarifes\Infrastructure\Logging\GestorFormulesTarifesLogger.cs" />
+    <Compile Include="GestorFormulesTarifes\Infrastructure\Logging\RepositoriConfiguracioLogGestorFormulesTarifes.cs" />
+    <Compile Include="GestorFormulesTarifes\Integracio\PuntEntradaGestorFormules.cs" />
+    <Compile Include="GestorFormulesTarifes\Models\ContextGestorFormulesA3Erp.cs" />
+    <Compile Include="GestorFormulesTarifes\Models\FormulaTarifa.cs" />
+    <Compile Include="GestorFormulesTarifes\MotorExpressions\AvaluadorExpressioFormula.cs" />
+    <Compile Include="GestorFormulesTarifes\MotorExpressions\ContextAvaluacioFormula.cs" />
+    <Compile Include="GestorFormulesTarifes\MotorExpressions\ExcepcioExpressioFormula.cs" />
+    <Compile Include="GestorFormulesTarifes\MotorExpressions\MotorFormulaTarifesConfigurable.cs" />
+    <Compile Include="GestorFormulesTarifes\MotorExpressions\ResultatAvaluacioFormulaTarifes.cs" />
+    <Compile Include="GestorFormulesTarifes\MotorExpressions\TipusTokenExpressio.cs" />
+    <Compile Include="GestorFormulesTarifes\MotorExpressions\TokenExpressio.cs" />
+    <Compile Include="GestorFormulesTarifes\MotorExpressions\TokenitzadorExpressio.cs" />
+    <Compile Include="GestorFormulesTarifes\Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="GestorFormulesTarifes\Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+    <Compile Include="GestorFormulesTarifes\Validacio\ResultatValidacioFormula.cs" />
+    <Compile Include="GestorFormulesTarifes\Validacio\ValidadorFormulaTarifa.cs" />
+    <Compile Include="ImportadorArticles\FrmImportadorArticles.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ImportadorArticles\FrmImportadorArticles.Designer.cs">
+      <DependentUpon>FrmImportadorArticles.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ImportadorArticles\Infrastructure\Connections\ServeiResolucioConnexioA3Erp.cs" />
+    <Compile Include="ImportadorArticles\Infrastructure\Data\RepositoriArticlesA3Erp.cs" />
+    <Compile Include="ImportadorArticles\Infrastructure\Logging\ImportadorArticlesLogger.cs" />
+    <Compile Include="ImportadorArticles\Integration\PuntEntradaImportador.cs" />
+    <Compile Include="ImportadorArticles\Models\ArticleA3ErpActual.cs" />
+    <Compile Include="ImportadorArticles\Models\ArticleImportacio.cs" />
+    <Compile Include="ImportadorArticles\Models\ConfiguracioLogImportador.cs" />
+    <Compile Include="ImportadorArticles\Models\ContextImportadorA3Erp.cs" />
+    <Compile Include="ImportadorArticles\Models\EstatImportacio.cs" />
+    <Compile Include="ImportadorArticles\Models\ResultatImportacioArticle.cs" />
+    <Compile Include="ImportadorArticles\Models\ResultatImportacioLot.cs" />
+    <Compile Include="ImportadorArticles\Models\ResultatLecturaFitxer.cs" />
+    <Compile Include="ImportadorArticles\Models\ResultatResolucioConnexio.cs" />
+    <Compile Include="ImportadorArticles\Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <Compile Include="ImportadorArticles\Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+    <Compile Include="ImportadorArticles\Readers\LectorFitxerArticles.cs" />
+    <Compile Include="ImportadorArticles\Services\ConvertidorArticlesImportacio.cs" />
+    <Compile Include="ImportadorArticles\Services\ProcessadorImportacioArticles.cs" />
+    <Compile Include="ImportadorArticles\Services\ServeiConfiguracioLogImportador.cs" />
+    <Compile Include="ImportadorArticles\Services\ServeiImportacioArticlesActiveX.cs" />
+    <Compile Include="ImportadorArticles\Services\ServeiValidacioArticlesA3Erp.cs" />
+    <Compile Include="Infrastructure\IconaAplicacio.cs" />
+    <Compile Include="Infrastructure\Runtime\ContextRuntimeA3Erp.cs" />
+    <Compile Include="Principal.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="at.ico">
+      <LogicalName>MAT0943Net.at.ico</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="CalculadorTarifes\Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+      <LogicalName>A3ErpCalculadorTarifes.Properties.Resources.resources</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="GestorFormulesTarifes\Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+      <LogicalName>A3ErpGestorFormulesTarifes.Properties.Resources.resources</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ImportadorArticles\Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+      <LogicalName>A3ErpImportadorArticles.Properties.Resources.resources</LogicalName>
+    </EmbeddedResource>
+    <None Include="CalculadorTarifes\Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <None Include="GestorFormulesTarifes\Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <None Include="packages.config" />
+    <None Include="ImportadorArticles\Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="GestorFormulesTarifes\Expressions\" />
+    <Folder Include="GestorFormulesTarifes\Serveis\" />
+    <Folder Include="GestorFormulesTarifes\Utilitats\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="GestorFormulesTarifes\ScriptsSQL\001_Verificar_AT_ARTICULO_FORMULAS.sql" />
+    <Content Include="GestorFormulesTarifes\ScriptsSQL\002_Carregar_Formules_Inicials.sql" />
+    <Content Include="GestorFormulesTarifes\ScriptsSQL\003_Recuperar_Formula_Eliminada_Per_ID.sql" />
+    <Content Include="CalculadorTarifes\ScriptsSQL\001_Verificar_Tarifes_i_Descomptes_Article.sql" />
+    <Content Include="ScriptsSQL\001_Crear_AT_MAT0943NET_CONFIG.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <COMReference Include="a3ERPActiveX">
+      <Guid>{C29630B5-F172-4ED9-8D55-F0579E0F571E}</Guid>
+      <VersionMajor>1</VersionMajor>
+      <VersionMinor>0</VersionMinor>
+      <Lcid>0</Lcid>
+      <WrapperTool>tlbimp</WrapperTool>
+      <Isolated>False</Isolated>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+      <Private>False</Private>
+    </COMReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

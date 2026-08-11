@@ -1,0 +1,27 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Build outputs
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+x86/
+x64/
+
+# NuGet packages restored locally
+packages/
+*.nupkg
+
+# Logs and temporary files
+*.log
+*.tmp
+*.cache
+
+# OS generated files
+Thumbs.db
+desktop.ini
