@@ -1,3 +1,4 @@
+using A3ErpCalculadorTarifes.Infrastructure.Connections;
 using A3ErpCalculadorTarifes.Models;
 using A3ErpCalculadorTarifes.Infrastructure.Logging;
 using System;
@@ -34,43 +35,30 @@ namespace A3ErpCalculadorTarifes.Integration
                 "S'inicia PuntEntradaCalculador.Obrir().",
                 campsObertura);
 
-            ContextCalculadorA3Erp context =
-                ConstruirContext(
+            ServeiResolucioConnexioA3Erp serveiConnexio =
+                new ServeiResolucioConnexioA3Erp();
+
+            ResultatResolucioConnexio resultat =
+                serveiConnexio.Resoldre(
                     baseDadesEmpresa,
                     connexioEmpresa);
 
+            if (!resultat.Correcte)
+            {
+                CalculadorTarifesLogger.ErrorFatalObertura(
+                    "No s'ha pogut resoldre la connexió del calculador.",
+                    new InvalidOperationException(
+                        resultat.Missatge),
+                    campsObertura);
+
+                MostrarErrorConnexio(
+                    resultat.Missatge);
+
+                return;
+            }
+
             ObrirFormulari(
-                context);
-        }
-
-        /// <summary>
-        /// Construeix el context real que espera
-        /// FrmCalculadorTarifes.
-        /// </summary>
-        private static ContextCalculadorA3Erp ConstruirContext(
-            string baseDadesEmpresa,
-            string connexioEmpresa)
-        {
-            if (string.IsNullOrWhiteSpace(baseDadesEmpresa))
-            {
-                throw new InvalidOperationException(
-                    "No s'ha rebut la base de dades de l'empresa activa.");
-            }
-
-            if (string.IsNullOrWhiteSpace(connexioEmpresa))
-            {
-                throw new InvalidOperationException(
-                    "No s'ha rebut la connexio de l'empresa activa.");
-            }
-
-            string baseDades =
-                baseDadesEmpresa.Trim();
-
-            return new ContextCalculadorA3Erp(
-                empresaActiva: baseDades,
-                baseDadesEmpresa: baseDades,
-                cadenaConnexio: connexioEmpresa,
-                utilitzaConnexioAlternativa: false);
+                resultat.Context);
         }
 
         /// <summary>
@@ -163,6 +151,25 @@ namespace A3ErpCalculadorTarifes.Integration
                         : "No"
                 }
             };
+        }
+
+        /// <summary>
+        /// Mostra un error controlat quan no s'ha pogut
+        /// establir cap connexió amb l'empresa activa.
+        /// </summary>
+        private static void MostrarErrorConnexio(
+            string missatge)
+        {
+            string detall =
+                string.IsNullOrWhiteSpace(missatge)
+                    ? "No s'ha pogut establir la connexió amb a3ERP."
+                    : missatge;
+
+            MessageBox.Show(
+                detall,
+                "Connexió amb a3ERP",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error);
         }
     }
 }
