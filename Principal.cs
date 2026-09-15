@@ -1,7 +1,14 @@
 ﻿using A3ErpCalculadorTarifes.Integration;
+using A3ErpImportadorArticles.Infrastructure.Connections;
 using A3ErpImportadorArticles.Integration;
+using A3ErpImportadorArticles.Infrastructure.Logging;
+using A3ErpImportadorArticles.Models;
+using MAT0943Net.Infrastructure.Articles;
+using MAT0943Net.Infrastructure.Events;
 using MAT0943Net.Infrastructure.Runtime;
 using System;
+using System.Collections.Generic;
+using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
@@ -36,6 +43,29 @@ namespace MAT0943Net
         private const string AliasOpcioCalculador =
             "MuestraFrmCalculadorTarifas";
 
+        private const string EventAntesDeGuardarMaestroV2 =
+            "AntesDeGuardarMaestroV2";
+
+        private const string TablaArticulo =
+            "ARTICULO";
+
+        private const int EstadoMaestroAlta =
+            0;
+
+        private const int EstadoMaestroEdicion =
+            1;
+
+        private static readonly string[] CampsFormulaPrcCoste =
+        {
+            "PRCCOMPRA",
+            "DESC1",
+            "DESC2",
+            "DESC3",
+            "DESC4",
+            "PRCSTANDARD",
+            "PRCCOSTE"
+        };
+
         /// <summary>
         /// Context mantingut durant la sessió de l'empresa activa.
         /// </summary>
@@ -54,14 +84,203 @@ namespace MAT0943Net
         /// <summary>
         /// Retorna a a3ERP els procediments disponibles en aquesta DLL.
         /// </summary>
-        public string[] ListaProcedimientos()
+        public object[] ListaProcedimientos()
         {
-            return new string[]
+            return new object[]
             {
                 "Iniciar",
                 "Finalizar",
-                "Opcion"
+                "Opcion",
+                EventAntesDeGuardarMaestroV2
             };
+        }
+
+        /// <summary>
+        /// Event de mestre invocat per a3ERP abans de confirmar el guardat.
+        ///
+        /// Només recalcula PRCCOSTE per ARTICULO i modifica el mateix payload
+        /// rebut, de manera que a3ERP persisteixi el valor en el seu guardat
+        /// normal. No fa SQL directe, no crida Guarda() i no interfereix amb
+        /// el flux ja validat de l'importador.
+        /// </summary>
+        public bool AntesDeGuardarMaestroV2(
+            string tabla,
+            ref object datos,
+            int estado)
+        {
+            try
+            {
+                if (!string.Equals(
+                    (tabla ?? string.Empty).Trim(),
+                    TablaArticulo,
+                    StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+
+                if (estado != EstadoMaestroAlta &&
+                    estado != EstadoMaestroEdicion)
+                {
+                    ImportadorArticlesLogger.Debug(
+                        "Event de mestre ignorat perquè l'estat no correspon a alta/modificació.",
+                        new Dictionary<string, object>
+                        {
+                            { "Event", EventAntesDeGuardarMaestroV2 },
+                            { "Tabla", tabla },
+                            { "Estado", estado }
+                        });
+
+                    return true;
+                }
+
+                A3ErpMaestroEventData eventData;
+                string motiuPayload;
+
+                if (!A3ErpMaestroEventData.TryCreate(
+                    datos,
+                    out eventData,
+                    out motiuPayload))
+                {
+                    ImportadorArticlesLogger.Advertencia(
+                        "No s'ha pogut interpretar el payload del guardat d'ARTICULO. Es deixa continuar el guardat.",
+                        new Dictionary<string, object>
+                        {
+                            { "Event", EventAntesDeGuardarMaestroV2 },
+                            { "Tabla", tabla },
+                            { "Estado", estado },
+                            { "Motiu", motiuPayload }
+                        });
+
+                    return true;
+                }
+
+                string campAbsent =
+                    ObtenirPrimerCampFormulaAbsent(
+                        eventData);
+
+                if (!string.IsNullOrWhiteSpace(
+                    campAbsent))
+                {
+                    ImportadorArticlesLogger.Advertencia(
+                        "No es recalcula PRCCOSTE perquè el payload del mestre no conté tots els camps necessaris. Es deixa continuar el guardat.",
+                        new Dictionary<string, object>
+                        {
+                            { "Event", EventAntesDeGuardarMaestroV2 },
+                            { "Tabla", tabla },
+                            { "Estado", estado },
+                            { "CampFaltant", campAbsent }
+                        });
+
+                    return true;
+                }
+
+                double prcCompra;
+                double desc1;
+                double desc2;
+                double desc3;
+                double desc4;
+                double prcStandard;
+
+                if (!TryLlegirCampNumericFormula(
+                    eventData,
+                    "PRCCOMPRA",
+                    out prcCompra,
+                    tabla,
+                    estado)
+                    ||
+                    !TryLlegirCampNumericFormula(
+                        eventData,
+                        "DESC1",
+                        out desc1,
+                        tabla,
+                        estado)
+                    ||
+                    !TryLlegirCampNumericFormula(
+                        eventData,
+                        "DESC2",
+                        out desc2,
+                        tabla,
+                        estado)
+                    ||
+                    !TryLlegirCampNumericFormula(
+                        eventData,
+                        "DESC3",
+                        out desc3,
+                        tabla,
+                        estado)
+                    ||
+                    !TryLlegirCampNumericFormula(
+                        eventData,
+                        "DESC4",
+                        out desc4,
+                        tabla,
+                        estado)
+                    ||
+                    !TryLlegirCampNumericFormula(
+                        eventData,
+                        "PRCSTANDARD",
+                        out prcStandard,
+                        tabla,
+                        estado))
+                {
+                    return true;
+                }
+
+                double prcCosteCalculat =
+                    CalculadoraPrcCosteArticle.Calcular(
+                        prcCompra,
+                        desc1,
+                        desc2,
+                        desc3,
+                        desc4,
+                        prcStandard);
+
+                if (!eventData.TryAssignarValor(
+                    "PRCCOSTE",
+                    prcCosteCalculat))
+                {
+                    ImportadorArticlesLogger.Advertencia(
+                        "No s'ha pogut assignar PRCCOSTE al payload del mestre. Es deixa continuar el guardat.",
+                        new Dictionary<string, object>
+                        {
+                            { "Event", EventAntesDeGuardarMaestroV2 },
+                            { "Tabla", tabla },
+                            { "Estado", estado },
+                            { "PRCCOSTECalculat", prcCosteCalculat }
+                        });
+
+                    return true;
+                }
+
+                ImportadorArticlesLogger.Debug(
+                    "S'ha recalculat PRCCOSTE a AntesDeGuardarMaestroV2 d'ARTICULO.",
+                    CrearCampsLogEventMaestro(
+                        tabla,
+                        estado,
+                        prcCompra,
+                        desc1,
+                        desc2,
+                        desc3,
+                        desc4,
+                        prcStandard,
+                        prcCosteCalculat));
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                ImportadorArticlesLogger.Error(
+                    "Error no bloquejant recalculant PRCCOSTE en el guardat d'ARTICULO.",
+                    ex,
+                    new Dictionary<string, object>
+                    {
+                        { "Event", EventAntesDeGuardarMaestroV2 },
+                        { "Tabla", tabla },
+                        { "Estado", estado }
+                    });
+
+                return true;
+            }
         }
 
         /// <summary>
@@ -75,9 +294,13 @@ namespace MAT0943Net
             {
                 _errorInicialitzacio = string.Empty;
 
+                ImportadorArticlesLogger.InicialitzarLogReserva();
+
                 _runtimeContext.InicialitzarDesA3Erp(
                     conexionSistema,
                     conexionEmpresa);
+
+                InicialitzarLogOperatiuImportador();
             }
             catch (Exception ex)
             {
@@ -295,6 +518,149 @@ namespace MAT0943Net
                     idOpcion,
                     AliasOpcioCalculador,
                     StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string ObtenirPrimerCampFormulaAbsent(
+            A3ErpMaestroEventData eventData)
+        {
+            foreach (string camp in CampsFormulaPrcCoste)
+            {
+                if (!eventData.ConteCamp(
+                    camp))
+                {
+                    return camp;
+                }
+            }
+
+            return string.Empty;
+        }
+
+        private static bool TryLlegirCampNumericFormula(
+            A3ErpMaestroEventData eventData,
+            string camp,
+            out double valor,
+            string tabla,
+            int estado)
+        {
+            string motiu;
+
+            if (eventData.TryObtenirDouble(
+                camp,
+                out valor,
+                out motiu))
+            {
+                return true;
+            }
+
+            ImportadorArticlesLogger.Advertencia(
+                "No es recalcula PRCCOSTE perquè un camp de la fórmula no és numèric. Es deixa continuar el guardat.",
+                new Dictionary<string, object>
+                {
+                    { "Event", EventAntesDeGuardarMaestroV2 },
+                    { "Tabla", tabla },
+                    { "Estado", estado },
+                    { "Camp", camp },
+                    { "Motiu", motiu }
+                });
+
+            return false;
+        }
+
+        private static Dictionary<string, object> CrearCampsLogEventMaestro(
+            string tabla,
+            int estado,
+            double prcCompra,
+            double desc1,
+            double desc2,
+            double desc3,
+            double desc4,
+            double prcStandard,
+            double prcCosteCalculat)
+        {
+            return new Dictionary<string, object>
+            {
+                { "Event", EventAntesDeGuardarMaestroV2 },
+                { "Tabla", tabla },
+                { "Estado", estado },
+                { "PRCCOMPRA", prcCompra.ToString(CultureInfo.InvariantCulture) },
+                { "DESC1", desc1.ToString(CultureInfo.InvariantCulture) },
+                { "DESC2", desc2.ToString(CultureInfo.InvariantCulture) },
+                { "DESC3", desc3.ToString(CultureInfo.InvariantCulture) },
+                { "DESC4", desc4.ToString(CultureInfo.InvariantCulture) },
+                { "PRCSTANDARD", prcStandard.ToString(CultureInfo.InvariantCulture) },
+                { "PRCCOSTECalculat", prcCosteCalculat.ToString(CultureInfo.InvariantCulture) }
+            };
+        }
+
+        private void InicialitzarLogOperatiuImportador()
+        {
+            try
+            {
+                if (!_runtimeContext.TeEmpresaInicialitzada)
+                {
+                    return;
+                }
+
+                ServeiResolucioConnexioA3Erp serveiConnexio =
+                    new ServeiResolucioConnexioA3Erp();
+
+                ResultatResolucioConnexio resultat =
+                    serveiConnexio.Resoldre(
+                        _runtimeContext.BaseDadesEmpresa,
+                        _runtimeContext.ConnexioEmpresa);
+
+                if (!resultat.Correcte)
+                {
+                    ImportadorArticlesLogger.AdvertenciaArrencada(
+                        "No s'ha pogut resoldre la connexió per inicialitzar el log operatiu des de Principal.Iniciar. Es manté el log local de reserva.",
+                        new Dictionary<string, object>
+                        {
+                            {
+                                "Error",
+                                resultat.Missatge
+                            },
+                            {
+                                "ErrorConnexioOriginal",
+                                resultat.ErrorConnexioOriginal
+                            }
+                        });
+
+                    return;
+                }
+
+                InicialitzadorLogImportador.Inicialitzar(
+                    resultat.Context);
+
+                ImportadorArticlesLogger.InformacioArrencada(
+                    "S'ha resolt la connexió per inicialitzar el log operatiu des de Principal.Iniciar.",
+                    new Dictionary<string, object>
+                    {
+                        {
+                            "OrigenConnexio",
+                            resultat.Context.OrigenConnexio
+                        },
+                        {
+                            "UtilitzaConnexioAlternativa",
+                            resultat.Context.UtilitzaConnexioAlternativa
+                        },
+                        {
+                            "BaseDades",
+                            resultat.Context.BaseDadesEmpresa
+                        }
+                    });
+            }
+            catch (Exception ex)
+            {
+                ImportadorArticlesLogger.AdvertenciaArrencada(
+                    "No s'ha pogut inicialitzar el log operatiu des de Principal.Iniciar. Es manté el log local de reserva.",
+                    new Dictionary<string, object>
+                    {
+                        {
+                            "Error",
+                            ex.Message
+                        }
+                    });
+            }
         }
 
         /// <summary>

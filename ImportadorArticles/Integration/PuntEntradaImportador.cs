@@ -17,9 +17,6 @@ namespace A3ErpImportadorArticles.Integration
     /// </summary>
     public static class PuntEntradaImportador
     {
-        private const int DiesRetencioLog =
-            7;
-
         /// <summary>
         /// Obre l'importador amb el context
         /// de l'empresa activa.
@@ -111,56 +108,8 @@ namespace A3ErpImportadorArticles.Integration
         private static void InicialitzarLog(
             ContextImportadorA3Erp context)
         {
-            if (context == null)
-            {
-                return;
-            }
-
-            ConfiguracioLogImportador configuracio =
-                new ConfiguracioLogImportador();
-
-            try
-            {
-                ServeiConfiguracioLogImportador serveiConfiguracio =
-                    new ServeiConfiguracioLogImportador();
-
-                configuracio =
-                    serveiConfiguracio.Carregar(
-                        context.CadenaConnexio);
-            }
-            catch (Exception ex)
-            {
-                ImportadorArticlesLogger.Error(
-                    "No s'ha pogut llegir la configuració del log de l'importador. Es continua amb el log local de reserva.",
-                    ex,
-                    CrearCampsContext(
-                        context));
-            }
-
-            ImportadorArticlesLogger.AplicarConfiguracioLog(
-                configuracio);
-
-            ImportadorArticlesLogger.Informacio(
-                "S'ha inicialitzat el sistema de log.",
-                new Dictionary<string, object>
-                {
-                    {
-                        "Empresa",
-                        context.EmpresaActiva
-                    },
-                    {
-                        "BaseDades",
-                        context.BaseDadesEmpresa
-                    },
-                    {
-                        "Ruta",
-                        configuracio.RutaLog
-                    },
-                    {
-                        "RetencioDies",
-                        DiesRetencioLog
-                    }
-                });
+            InicialitzadorLogImportador.Inicialitzar(
+                context);
         }
 
         /// <summary>

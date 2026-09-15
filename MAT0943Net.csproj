@@ -148,6 +148,7 @@
       <DependentUpon>FrmImportadorArticles.cs</DependentUpon>
     </Compile>
     <Compile Include="ImportadorArticles\Infrastructure\Connections\ServeiResolucioConnexioA3Erp.cs" />
+    <Compile Include="ImportadorArticles\Infrastructure\Logging\InicialitzadorLogImportador.cs" />
     <Compile Include="ImportadorArticles\Infrastructure\Data\RepositoriArticlesA3Erp.cs" />
     <Compile Include="ImportadorArticles\Infrastructure\Logging\ImportadorArticlesLogger.cs" />
     <Compile Include="ImportadorArticles\Integration\PuntEntradaImportador.cs" />
@@ -176,6 +177,8 @@
     <Compile Include="ImportadorArticles\Services\ServeiConfiguracioLogImportador.cs" />
     <Compile Include="ImportadorArticles\Services\ServeiImportacioArticlesActiveX.cs" />
     <Compile Include="ImportadorArticles\Services\ServeiValidacioArticlesA3Erp.cs" />
+    <Compile Include="Infrastructure\Articles\CalculadoraPrcCosteArticle.cs" />
+    <Compile Include="Infrastructure\Events\A3ErpMaestroEventData.cs" />
     <Compile Include="Infrastructure\IconaAplicacio.cs" />
     <Compile Include="Infrastructure\Runtime\ContextRuntimeA3Erp.cs" />
     <Compile Include="Principal.cs" />

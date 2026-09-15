@@ -1,6 +1,7 @@
 ﻿using A3ErpImportadorArticles.Infrastructure.Logging;
 using A3ErpImportadorArticles.Models;
 using a3ERPActiveX;
+using MAT0943Net.Infrastructure.Articles;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -22,6 +23,17 @@ namespace A3ErpImportadorArticles.Services
     {
         private const string NomMestreArticles =
             "ARTICULOS";
+
+        private static readonly string[] CampsFormulaPrcCoste =
+        {
+            "PRCCOMPRA",
+            "DESC1",
+            "DESC2",
+            "DESC3",
+            "DESC4",
+            "PRCSTANDARD",
+            "PRCCOSTE"
+        };
 
         /// <summary>
         /// Importa un únic article mitjançant
@@ -214,6 +226,19 @@ namespace A3ErpImportadorArticles.Services
                 AssignarCampsInformats(
                     maestro,
                     article);
+
+                /*
+                 * MAT0943.dll Delphi ja no recalcula PRCCOSTE.
+                 * El cost es calcula aquí amb els valors finals
+                 * del mateix mestre, després d'aplicar els camps
+                 * informats del fitxer i abans de l'únic Guarda().
+                 */
+                etapaActual =
+                    "Recalcul de PRCCOSTE";
+
+                RecalcularPrcCoste(
+                    maestro,
+                    codiArticle);
 
                 /*
                  * Guarda(true) s'utilitza tant per a les altes
@@ -650,6 +675,188 @@ namespace A3ErpImportadorArticles.Services
                 maestro,
                 "AT_FORMULA_TARIFA_ID",
                 article.IdFormula);
+        }
+
+        /// <summary>
+        /// Recalcula PRCCOSTE dins del mateix mestre ARTICULO.
+        ///
+        /// El càlcul es fa després d'assignar els camps informats:
+        /// - en una alta, llegeix els valors finals del nou registre;
+        /// - en una modificació parcial, llegeix el valor importat
+        ///   si s'ha informat i el valor existent si no s'ha informat.
+        /// </summary>
+        private static void RecalcularPrcCoste(
+            IMaestro maestro,
+            string codiArticle)
+        {
+            if (maestro == null)
+            {
+                return;
+            }
+
+            if (!ExisteixenCampsFormulaPrcCoste(
+                maestro,
+                codiArticle))
+            {
+                return;
+            }
+
+            try
+            {
+                double prcCompra =
+                    maestro.AsFloat["PRCCOMPRA"];
+
+                double desc1 =
+                    maestro.AsFloat["DESC1"];
+
+                double desc2 =
+                    maestro.AsFloat["DESC2"];
+
+                double desc3 =
+                    maestro.AsFloat["DESC3"];
+
+                double desc4 =
+                    maestro.AsFloat["DESC4"];
+
+                double prcStandard =
+                    maestro.AsFloat["PRCSTANDARD"];
+
+                double prcCosteCalculat =
+                    CalculadoraPrcCosteArticle.Calcular(
+                        prcCompra,
+                        desc1,
+                        desc2,
+                        desc3,
+                        desc4,
+                        prcStandard);
+
+                maestro.AsFloat["PRCCOSTE"] =
+                    prcCosteCalculat;
+
+                ImportadorArticlesLogger.Debug(
+                    "S'ha recalculat PRCCOSTE al mestre ActiveX abans de Guarda(true).",
+                    new Dictionary<string, object>
+                    {
+                        {
+                            "CODART",
+                            codiArticle ?? string.Empty
+                        },
+                        {
+                            "PRCCOMPRA",
+                            prcCompra
+                        },
+                        {
+                            "DESC1",
+                            desc1
+                        },
+                        {
+                            "DESC2",
+                            desc2
+                        },
+                        {
+                            "DESC3",
+                            desc3
+                        },
+                        {
+                            "DESC4",
+                            desc4
+                        },
+                        {
+                            "PRCSTANDARD",
+                            prcStandard
+                        },
+                        {
+                            "PRCCOSTECalculat",
+                            prcCosteCalculat
+                        }
+                    });
+            }
+            catch (Exception ex)
+            {
+                /*
+                 * No fem fallar la importació per aquest recalcul.
+                 * Si a3ERP no permet llegir o assignar algun camp,
+                 * es conserva el comportament anterior del mestre.
+                 */
+                ImportadorArticlesLogger.Advertencia(
+                    "No s'ha pogut recalcular PRCCOSTE abans de Guarda(true). Es continua amb el comportament anterior.",
+                    new Dictionary<string, object>
+                    {
+                        {
+                            "CODART",
+                            codiArticle ?? string.Empty
+                        },
+                        {
+                            "Error",
+                            ex.Message
+                        }
+                    });
+            }
+        }
+
+        /// <summary>
+        /// Comprova els camps necessaris per calcular PRCCOSTE
+        /// sense provocar errors nous si alguna instal·lació
+        /// d'a3ERP no exposa un camp esperat.
+        /// </summary>
+        private static bool ExisteixenCampsFormulaPrcCoste(
+            IMaestro maestro,
+            string codiArticle)
+        {
+            foreach (string camp in CampsFormulaPrcCoste)
+            {
+                bool existeix;
+
+                try
+                {
+                    existeix =
+                        maestro.ExisteCampo(
+                            camp);
+                }
+                catch (Exception ex)
+                {
+                    ImportadorArticlesLogger.Advertencia(
+                        "No s'ha pogut verificar un camp necessari per recalcular PRCCOSTE. Es continua amb el comportament anterior.",
+                        new Dictionary<string, object>
+                        {
+                            {
+                                "CODART",
+                                codiArticle ?? string.Empty
+                            },
+                            {
+                                "Camp",
+                                camp
+                            },
+                            {
+                                "Error",
+                                ex.Message
+                            }
+                        });
+
+                    return false;
+                }
+
+                if (!existeix)
+                {
+                    ImportadorArticlesLogger.Advertencia(
+                        "No s'ha recalculat PRCCOSTE perquè el mestre ARTICULO no exposa un camp necessari. Es continua amb el comportament anterior.",
+                        new Dictionary<string, object>
+                        {
+                            {
+                                "CODART",
+                                codiArticle ?? string.Empty
+                            },
+                            {
+                                "Camp",
+                                camp
+                            }
+                        });
+
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         /// <summary>

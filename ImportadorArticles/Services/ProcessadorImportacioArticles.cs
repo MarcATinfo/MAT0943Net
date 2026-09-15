@@ -80,23 +80,26 @@ namespace A3ErpImportadorArticles.Services
 
             try
             {
-                if (!InicialitzarEnlaceActiveX(
-                    articlesAProcessar,
-                    resultatLot,
-                    notificarProgres,
-                    total,
-                    out enlaceActiveX))
+                if (RequereixConnexioActiveX(
+                    articlesAProcessar))
                 {
-                    cronometreLot.Stop();
-
-                    RegistrarResumLot(
-                        "Ha finalitzat el lot d'importació d'articles.",
+                    if (!InicialitzarEnlaceActiveX(
+                        articlesAProcessar,
                         resultatLot,
-                        cronometreLot.ElapsedMilliseconds);
+                        notificarProgres,
+                        total,
+                        out enlaceActiveX))
+                    {
+                        cronometreLot.Stop();
 
-                    return resultatLot;
+                        RegistrarResumLot(
+                            "Ha finalitzat el lot d'importació d'articles.",
+                            resultatLot,
+                            cronometreLot.ElapsedMilliseconds);
+
+                        return resultatLot;
+                    }
                 }
-
                 for (int index = 0;
                      index < total;
                      index++)
@@ -184,6 +187,10 @@ namespace A3ErpImportadorArticles.Services
                 DeterminarOperacioPrevista(
                     article);
 
+            string origenImportacio =
+                DeterminarOrigenImportacio(
+                    article);
+
             ImportadorArticlesLogger.Informacio(
                 "S'inicia el processament de l'article.",
                 CrearCampsIniciArticle(
@@ -196,7 +203,7 @@ namespace A3ErpImportadorArticles.Services
                 Stopwatch.StartNew();
 
             ResultatImportacioArticle resultatArticle =
-                _serveiImportacio.Importar(
+                ImportarArticle(
                     article);
 
             cronometreArticle.Stop();
@@ -212,7 +219,7 @@ namespace A3ErpImportadorArticles.Services
                     CrearCampsErrorArticle(
                         article,
                         operacioPrevista,
-                        "Retorn ActiveX");
+                        "Retorn servei d'importació");
 
                 campsErrorNull.Add(
                     "Missatge",
@@ -236,7 +243,7 @@ namespace A3ErpImportadorArticles.Services
                     CrearCampsErrorArticle(
                         article,
                         operacioPrevista,
-                        "Importació ActiveX");
+                        origenImportacio);
 
                 campsError.Add(
                     "Missatge",
@@ -297,6 +304,36 @@ namespace A3ErpImportadorArticles.Services
             return
                 article.Estat == EstatImportacio.Nou ||
                 article.Estat == EstatImportacio.Actualitzacio;
+        }
+
+        private static bool RequereixConnexioActiveX(
+            IEnumerable<ArticleImportacio> articles)
+        {
+            if (articles == null)
+            {
+                return false;
+            }
+
+            return articles.Any(
+                article =>
+                    article != null &&
+                    (
+                        article.Estat == EstatImportacio.Nou ||
+                        article.Estat == EstatImportacio.Actualitzacio
+                    ));
+        }
+
+        private ResultatImportacioArticle ImportarArticle(
+            ArticleImportacio article)
+        {
+            return _serveiImportacio.Importar(
+                article);
+        }
+
+        private static string DeterminarOrigenImportacio(
+            ArticleImportacio article)
+        {
+            return "Importació ActiveX";
         }
 
         /// <summary>
