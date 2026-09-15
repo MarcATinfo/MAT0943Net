@@ -5,4 +5,7 @@
   <Project Path="MAT0943Net.csproj" Id="4f11e521-a9e7-4ae7-b01a-4899b6f0b931">
     <Platform Solution="*|x86" Project="x86" />
   </Project>
+  <Project Path="MAT0943Net.ActiveXPoC/MAT0943Net.ActiveXPoC.csproj" Id="3957cbde-2e4e-4367-a960-9c916315dde6">
+    <Platform Solution="*|x86" Project="x86" />
+  </Project>
 </Solution>
