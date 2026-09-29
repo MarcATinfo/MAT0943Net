@@ -343,7 +343,7 @@ namespace A3ErpCalculadorTarifes.Infrastructure.Data
         /// i, quan correspon, els quatre descomptes
         /// per família de client.
         ///
-        /// Tot el lot s'executa dins d'una única
+        /// Tot el lot (conjunt) s'executa dins d'una única
         /// transacció:
         /// - si tot és correcte, fa COMMIT;
         /// - si falla qualsevol operació, fa ROLLBACK.
@@ -1503,7 +1503,7 @@ WHERE TIPREG = 'AF'
         }
 
         /// <summary>
-        /// Valida el lot abans d'obrir
+        /// Valida el lot (conjunt) abans d'obrir
         /// cap transacció d'aplicació.
         /// </summary>
         private static Dictionary<string, object> CrearCampsLot(
@@ -1634,7 +1634,7 @@ WHERE TIPREG = 'AF'
                 if (resultat == null)
                 {
                     throw new InvalidOperationException(
-                        "El lot conté un resultat nul.");
+                        "El lot (conjunt) conté un resultat nul.");
                 }
 
                 if (!resultat.Correcte)
