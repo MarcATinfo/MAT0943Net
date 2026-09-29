@@ -37,6 +37,9 @@ namespace MAT0943Net
         private const string IdOpcioCalculador =
             "CALCULADORTARIFAS";
 
+        private const string IdOpcioTraspasFacturas =
+            "TRASPASFACTURAS";
+
         private const string AliasOpcioImportador =
             "MuestraFrmImportadorArticulos";
 
@@ -372,6 +375,18 @@ namespace MAT0943Net
                     return;
                 }
 
+                if (string.Equals(
+                    idNormalitzat,
+                    IdOpcioTraspasFacturas,
+                    StringComparison.OrdinalIgnoreCase))
+                {
+                    ObrirTraspasFacturas(
+                        origenCrida: "Opcion",
+                        parametro: parametro);
+
+                    return;
+                }
+
                 MessageBox.Show(
                     "L'opció de menú rebuda no és reconeguda."
                     + Environment.NewLine
@@ -479,6 +494,78 @@ namespace MAT0943Net
             catch (Exception ex)
             {
                 MostrarErrorOberturaCalculador(ex);
+            }
+        }
+
+        private void ObrirTraspasFacturas(
+            string origenCrida,
+            object parametro)
+        {
+            try
+            {
+                if (!_runtimeContext.TeEmpresaInicialitzada)
+                {
+                    MessageBox.Show(
+                        "No es pot obrir el traspàs de factures perquè no hi ha "
+                        + "cap empresa inicialitzada correctament.",
+                        "Traspàs de factures",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+
+                    return;
+                }
+
+                string directoriDll =
+                    System.IO.Path.GetDirectoryName(
+                        typeof(Principal).Assembly.Location);
+
+                string rutaExe =
+                    System.IO.Path.Combine(
+                        directoriDll,
+                        "MAT0943Net.TraspasFacturas.exe");
+
+                if (!System.IO.File.Exists(rutaExe))
+                {
+                    MessageBox.Show(
+                        "No s'ha trobat l'executable de traspàs de factures."
+                        + Environment.NewLine
+                        + Environment.NewLine
+                        + rutaExe,
+                        "Traspàs de factures",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error);
+
+                    return;
+                }
+
+                string baseDadesOrigen =
+                    _runtimeContext.BaseDadesEmpresa;
+
+                var info =
+                    new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = rutaExe,
+                        Arguments =
+                            "--baseDatosOrigen "
+                            + "\""
+                            + baseDadesOrigen
+                            + "\"",
+                        UseShellExecute = false,
+                        WorkingDirectory = directoriDll
+                    };
+
+                System.Diagnostics.Process.Start(info);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "No s'ha pogut obrir el traspàs de factures."
+                    + Environment.NewLine
+                    + Environment.NewLine
+                    + ex.Message,
+                    "Traspàs de factures",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
             }
         }
 

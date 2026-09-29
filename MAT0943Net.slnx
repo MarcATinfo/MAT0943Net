@@ -8,4 +8,7 @@
   <Project Path="MAT0943Net.ActiveXPoC/MAT0943Net.ActiveXPoC.csproj" Id="3957cbde-2e4e-4367-a960-9c916315dde6">
     <Platform Solution="*|x86" Project="x86" />
   </Project>
+  <Project Path="MAT0943Net.TraspasFacturas/MAT0943Net.TraspasFacturas.csproj" Id="6bdbecf3-d257-4f15-8b8b-5b8d32334f97">
+    <Platform Solution="*|x86" Project="x86" />
+  </Project>
 </Solution>

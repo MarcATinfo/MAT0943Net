@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProjectGuid>{6BDBECF3-D257-4F15-8B8B-5B8D32334F97}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>MAT0943Net.TraspasFacturas</RootNamespace>
+    <AssemblyName>MAT0943Net.TraspasFacturas</AssemblyName>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x86\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+    <LangVersion>7.3</LangVersion>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
+    <OutputPath>bin\x86\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+    <LangVersion>7.3</LangVersion>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Forms\FrmTraspasFacturas.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Infrastructure\Connections\TraspasFacturasConnectionStringHelper.cs" />
+    <Compile Include="Infrastructure\Logging\TraspasFacturasLogger.cs" />
+    <Compile Include="Infrastructure\Logging\InicialitzadorLogTraspasFacturas.cs" />
+    <Compile Include="Infrastructure\UI\DataGridViewCheckBoxHeaderCell.cs" />
+    <Compile Include="Infrastructure\UI\TraspasFacturasTheme.cs" />
+    <Compile Include="Models\ConfiguracioLogTraspasFacturas.cs" />
+    <Compile Include="Models\FacturaOrigenDto.cs" />
+    <Compile Include="Models\LineaFacturaOrigenDto.cs" />
+    <Compile Include="Models\ResultadoTraspasFacturaDto.cs" />
+    <Compile Include="Models\ResultadoValidacionTraspasoDto.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Services\ConsultaEmpresasActiveXService.cs" />
+    <Compile Include="Services\ConsultaFacturasOrigenService.cs" />
+    <Compile Include="Services\ConsultaLineasFacturaOrigenService.cs" />
+    <Compile Include="Services\ServeiConfiguracioLogTraspasFacturas.cs" />
+    <Compile Include="Services\ServeiTraspasFacturesActiveX.cs" />
+    <Compile Include="Services\ServeiValidacioFacturaVendaDestino.cs" />
+    <Compile Include="Services\ServeiVincleTraspasFactures.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Infrastructure\Runtime\" />
+  </ItemGroup>
+  <ItemGroup>
+    <COMReference Include="a3ERPActiveX">
+      <Guid>{C29630B5-F172-4ED9-8D55-F0579E0F571E}</Guid>
+      <VersionMajor>1</VersionMajor>
+      <VersionMinor>0</VersionMinor>
+      <Lcid>0</Lcid>
+      <WrapperTool>tlbimp</WrapperTool>
+      <Isolated>False</Isolated>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+    </COMReference>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\at.ico" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>
