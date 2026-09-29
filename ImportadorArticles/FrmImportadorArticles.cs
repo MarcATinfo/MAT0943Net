@@ -2344,7 +2344,7 @@ namespace A3ErpImportadorArticles
 
                             /*
                              * Permet actualitzar visualment la barra
-                             * mentre ActiveX processa el lot.
+                             * mentre ActiveX processa el lot (conjunt).
                              */
                             Application.DoEvents();
                         });

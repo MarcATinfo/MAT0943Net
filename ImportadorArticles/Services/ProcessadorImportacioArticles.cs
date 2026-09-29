@@ -93,7 +93,7 @@ namespace A3ErpImportadorArticles.Services
                         cronometreLot.Stop();
 
                         RegistrarResumLot(
-                            "Ha finalitzat el lot d'importació d'articles.",
+                            "Ha finalitzat el lot (conjunt) d'importació d'articles.",
                             resultatLot,
                             cronometreLot.ElapsedMilliseconds);
 
@@ -579,7 +579,7 @@ namespace A3ErpImportadorArticles.Services
             try
             {
                 ImportadorArticlesLogger.Informacio(
-                    "Es finalitza la referència ActiveX del lot sense tancar la sessió activa d'a3ERP.",
+                    "Es finalitza la referència ActiveX del lot (conjunt) sense tancar la sessió activa d'a3ERP.",
                     CrearCampsFinalitzacioReferenciaActiveX(
                         enlaceActiveX));
 

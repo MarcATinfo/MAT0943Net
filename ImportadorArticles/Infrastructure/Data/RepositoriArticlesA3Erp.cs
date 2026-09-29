@@ -162,7 +162,7 @@ namespace A3ErpImportadorArticles.Infrastructure.Data
 
         /// <summary>
         /// Executa una consulta parametritzada
-        /// per a un lot de codis.
+        /// per a un lot (conjunt) de codis.
         ///
         /// Alguns CODART numèrics d'a3ERP estan desats
         /// amb espais inicials fins a completar la longitud
