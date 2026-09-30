@@ -22,6 +22,10 @@ namespace MAT0943Net.TraspasFacturas.Services
             _serveiVincle =
                 new ServeiVincleTraspasFactures();
 
+        private readonly ConsultaFacturaDestinoService
+            _consultaFacturaDestino =
+                new ConsultaFacturaDestinoService();
+
         public ResultadoTraspasFacturaDto CrearFacturaVenda(
             string baseDatosOrigen,
             string empresaDestino,
@@ -132,28 +136,236 @@ namespace MAT0943Net.TraspasFacturas.Services
                  * Si ja existeix com CREADA o PENDIENTE,
                  * ServeiVincleTraspasFactures el bloquejarà.
                  */
-                _serveiVincle.PrepararTraspaso(
-                    baseDatosOrigen,
-                    facturaOrigen.IdFacv,
-                    empresaDestino,
-                    baseDatosDestino);
+                VincleTraspasPendienteDto pendiente =
+                    _serveiVincle.ObtenerPendiente(
+                        baseDatosOrigen,
+                        facturaOrigen.IdFacv);
 
-                vinclePreparat =
-                    true;
-
-                TraspasFacturasLogger.Debug(
-                    "S'ha preparat el vincle de traspàs en estat PENDIENTE.",
-                    new Dictionary<string, object>
+                if (pendiente != null)
+                {
+                    /*
+                     * Per seguretat, un pendent només es recupera
+                     * contra la mateixa empresa/base de dades.
+                     */
+                    if (!string.Equals(
+                            pendiente.EmpresaDestino,
+                            empresaDestino,
+                            StringComparison.OrdinalIgnoreCase) ||
+                        !string.Equals(
+                            pendiente.BaseDatosDestino,
+                            baseDatosDestino,
+                            StringComparison.OrdinalIgnoreCase))
                     {
+                        throw new InvalidOperationException(
+                            "La factura té un traspàs pendent cap a una altra empresa de destinació.");
+                    }
+
+                    if (pendiente.IdFacvDestino.HasValue &&
+                        pendiente.IdFacvDestino.Value > 0)
+                    {
+                        FacturaDestinoRecuperacionDto facturaExistente =
+                            _consultaFacturaDestino.Consultar(
+                                pendiente.BaseDatosDestino,
+                                pendiente.IdFacvDestino.Value);
+
+                        if (facturaExistente != null)
                         {
-                            "IDFACVOrigen",
-                            facturaOrigen.IdFacv
-                        },
-                        {
-                            "EmpresaDesti",
-                            empresaDestino
+                            /*
+                             * CAS IMPORTANT:
+                             * la factura ja existeix físicament.
+                             * NO en creem una altra.
+                             */
+                            TraspasFacturasLogger.Advertencia(
+                                "S'ha detectat un traspàs pendent amb la factura destí ja creada. " +
+                                "No es crearà una nova factura i es completarà el vincle existent.",
+                                new Dictionary<string, object>
+                                {
+                                    {
+                                        "FacturaOrigen",
+                                        facturaOrigen.Factura
+                                    },
+                                    {
+                                        "IDFACVOrigen",
+                                        facturaOrigen.IdFacv
+                                    },
+                                    {
+                                        "EmpresaDesti",
+                                        pendiente.EmpresaDestino
+                                    },
+                                    {
+                                        "BaseDadesDesti",
+                                        pendiente.BaseDatosDestino
+                                    },
+                                    {
+                                        "IDFACVDesti",
+                                        facturaExistente.IdFacv
+                                    }
+                                });
+
+                            _serveiVincle.MarcarCreada(
+                                baseDatosOrigen,
+                                facturaOrigen.IdFacv,
+                                pendiente.EmpresaDestino,
+                                pendiente.BaseDatosDestino,
+                                facturaExistente.IdFacv,
+                                facturaExistente.Serie,
+                                facturaExistente.NumDoc);
+
+                            TraspasFacturasLogger.Informacio(
+                                "S'ha recuperat el traspàs pendent i el vincle s'ha marcat com CREADA.",
+                                new Dictionary<string, object>
+                                {
+                                    {
+                                        "FacturaOrigen",
+                                        facturaOrigen.Factura
+                                    },
+                                    {
+                                        "IDFACVOrigen",
+                                        facturaOrigen.IdFacv
+                                    },
+                                    {
+                                        "EmpresaDesti",
+                                        pendiente.EmpresaDestino
+                                    },
+                                    {
+                                        "BaseDadesDesti",
+                                        pendiente.BaseDatosDestino
+                                    },
+                                    {
+                                        "IDFACVDesti",
+                                        facturaExistente.IdFacv
+                                    },
+                                    {
+                                        "SerieDesti",
+                                        facturaExistente.Serie
+                                    },
+                                    {
+                                        "NumDocDesti",
+                                        facturaExistente.NumDoc
+                                    }
+                                });
+
+                            resultado.Correcto =
+                                true;
+
+                            resultado.Recuperada =
+                                true;
+
+                            resultado.IdDocumento =
+                                facturaExistente.IdFacv;
+
+                            resultado.Serie =
+                                facturaExistente.Serie;
+
+                            resultado.NumDoc =
+                                facturaExistente.NumDoc.ToString();
+
+                            return resultado;
                         }
-                    });
+
+                        /*
+                         * Teníem un ID destí guardat però aquella
+                         * factura ja no existeix.
+                         *
+                         * En aquest cas és segur tornar-la a generar.
+                         */
+                        TraspasFacturasLogger.Advertencia(
+                            "El traspàs pendent tenia una factura destí informada, " +
+                            "però ja no existeix. Es tornarà a intentar el traspàs.",
+                            new Dictionary<string, object>
+                            {
+                                {
+                                    "FacturaOrigen",
+                                    facturaOrigen.Factura
+                                },
+                                {
+                                    "IDFACVOrigen",
+                                    facturaOrigen.IdFacv
+                                },
+                                {
+                                    "EmpresaDesti",
+                                    empresaDestino
+                                },
+                                {
+                                    "BaseDadesDesti",
+                                    baseDatosDestino
+                                },
+                                {
+                                    "IDFACVDestiAnterior",
+                                    pendiente.IdFacvDestino.Value
+                                }
+                            });
+                    }
+                    else
+                    {
+                        TraspasFacturasLogger.Advertencia(
+                            "S'ha detectat un traspàs pendent sense ID de factura destí. " +
+                            "Es tornarà a intentar el traspàs.",
+                            new Dictionary<string, object>
+                            {
+                {
+                    "FacturaOrigen",
+                    facturaOrigen.Factura
+                },
+                {
+                    "IDFACVOrigen",
+                    facturaOrigen.IdFacv
+                },
+                {
+                    "EmpresaDesti",
+                    empresaDestino
+                }
+                            });
+                    }
+
+                    _serveiVincle.ReiniciarPendienteParaReintento(
+                        baseDatosOrigen,
+                        facturaOrigen.IdFacv,
+                        empresaDestino,
+                        baseDatosDestino);
+
+                    vinclePreparat =
+                        true;
+
+                    TraspasFacturasLogger.Debug(
+                        "S'ha preparat el traspàs pendent per a un nou intent.",
+                        new Dictionary<string, object>
+                        {
+                            {
+                                "IDFACVOrigen",
+                                facturaOrigen.IdFacv
+                            },
+                            {
+                                "EmpresaDesti",
+                                empresaDestino
+                            }
+                                        });
+                }
+                else
+                {
+                    _serveiVincle.PrepararTraspaso(
+                        baseDatosOrigen,
+                        facturaOrigen.IdFacv,
+                        empresaDestino,
+                        baseDatosDestino);
+
+                    vinclePreparat =
+                        true;
+
+                    TraspasFacturasLogger.Debug(
+                        "S'ha preparat el vincle de traspàs en estat PENDIENTE.",
+                        new Dictionary<string, object>
+                        {
+                            {
+                                "IDFACVOrigen",
+                                facturaOrigen.IdFacv
+                            },
+                            {
+                                "EmpresaDesti",
+                                empresaDestino
+                            }
+        });
+                }
 
                 string usuario =
                     ConfigurationManager.AppSettings[
@@ -278,8 +490,8 @@ namespace MAT0943Net.TraspasFacturas.Services
                 factura.CalcularImpuestosyTotales();
 
                 decimal idDocumento =
-                    Convert.ToDecimal(
-                        factura.Anade());
+     Convert.ToDecimal(
+         factura.Anade());
 
                 idDocumentoCreat =
                     idDocumento;
@@ -290,12 +502,55 @@ namespace MAT0943Net.TraspasFacturas.Services
                 /*
                  * A partir d'aquí la factura ja existeix
                  * físicament a l'empresa destí.
+                 *
+                 * Ho marquem ABANS de qualsevol altra
+                 * operació perquè, si falla alguna cosa,
+                 * el vincle no es converteixi en ERROR.
                  */
                 facturaCreada =
                     true;
 
                 resultado.IdDocumento =
                     idDocumento;
+
+                /*
+                 * Guardem immediatament l'IDFACV destí
+                 * mentre el vincle continua PENDIENTE.
+                 *
+                 * Així, si el procés falla abans de
+                 * MarcarCreada(), podrem identificar
+                 * exactament la factura que ja existeix.
+                 */
+                _serveiVincle.GuardarIdFacvDestinoPendiente(
+                    baseDatosOrigen,
+                    facturaOrigen.IdFacv,
+                    idDocumento);
+
+                TraspasFacturasLogger.Debug(
+                    "S'ha guardat l'ID de la factura destí al vincle pendent.",
+                    new Dictionary<string, object>
+                    {
+                        {
+                            "FacturaOrigen",
+                            facturaOrigen.Factura
+                        },
+                        {
+                            "IDFACVOrigen",
+                            facturaOrigen.IdFacv
+                        },
+                        {
+                            "EmpresaDesti",
+                            empresaDestino
+                        },
+                        {
+                            "BaseDadesDesti",
+                            baseDatosDestino
+                        },
+                        {
+                            "IDFACVDesti",
+                            idDocumento
+                        }
+                    });
 
                 resultado.Serie =
                     factura.AsStringCab["SERIE"]

@@ -1626,7 +1626,8 @@ namespace MAT0943Net.TraspasFacturas.Forms
                             _serveiVincleTraspas
                                 .ValidarDisponibleParaTraspaso(
                                     _baseDatosOrigen,
-                                    factura.IdFacv);
+                                    factura.IdFacv,
+                                    _empresaDestiSeleccionada);
                         }
                         catch (Exception ex)
                         {
@@ -1728,7 +1729,13 @@ namespace MAT0943Net.TraspasFacturas.Forms
                     // 4. TRASPÀS REAL
                     // -------------------------------------------------
 
+                    int processades =
+    0;
+
                     int creades =
+                        0;
+
+                    int recuperades =
                         0;
 
                     var resultats =
@@ -1740,7 +1747,7 @@ namespace MAT0943Net.TraspasFacturas.Forms
                             "Traspassant factura " +
                             factura.Factura +
                             " (" +
-                            (creades + 1) +
+                            (processades + 1) +
                             " de " +
                             seleccionades.Count +
                             ")...");
@@ -1766,8 +1773,8 @@ namespace MAT0943Net.TraspasFacturas.Forms
                                 traspas.Error +
                                 Environment.NewLine +
                                 Environment.NewLine +
-                                "Factures creades abans de l'error: " +
-                                creades +
+                                "Factures processades abans de l'error: " +
+                                processades +
                                 " de " +
                                 seleccionades.Count +
                                 ".";
@@ -1789,8 +1796,16 @@ namespace MAT0943Net.TraspasFacturas.Forms
                                         seleccionades.Count
                                     },
                                     {
+                                        "FacturesProcessades",
+                                        processades
+                                    },
+                                    {
                                         "FacturesCreades",
                                         creades
+                                    },
+                                    {
+                                        "FacturesRecuperades",
+                                        recuperades
                                     },
                                     {
                                         "EmpresaDesti",
@@ -1817,14 +1832,31 @@ namespace MAT0943Net.TraspasFacturas.Forms
                             return;
                         }
 
-                        creades++;
+                        processades++;
 
-                        resultats.Add(
-                            factura.Factura +
-                            " → " +
-                            traspas.Serie.Trim() +
-                            "-" +
-                            traspas.NumDoc);
+                        if (traspas.Recuperada)
+                        {
+                            recuperades++;
+
+                            resultats.Add(
+                                factura.Factura +
+                                " → " +
+                                traspas.Serie.Trim() +
+                                "-" +
+                                traspas.NumDoc +
+                                " (recuperada)");
+                        }
+                        else
+                        {
+                            creades++;
+
+                            resultats.Add(
+                                factura.Factura +
+                                " → " +
+                                traspas.Serie.Trim() +
+                                "-" +
+                                traspas.NumDoc);
+                        }
                     }
 
                     // -------------------------------------------------
@@ -1838,8 +1870,26 @@ namespace MAT0943Net.TraspasFacturas.Forms
                         "Empresa destí: " +
                         _empresaDestiSeleccionada +
                         Environment.NewLine +
-                        "Factures creades: " +
-                        creades +
+                        "Factures processades: " +
+                        processades;
+
+                    if (creades > 0)
+                    {
+                        resum +=
+                            Environment.NewLine +
+                            "Creades noves: " +
+                            creades;
+                    }
+
+                    if (recuperades > 0)
+                    {
+                        resum +=
+                            Environment.NewLine +
+                            "Recuperades: " +
+                            recuperades;
+                    }
+
+                    resum +=
                         Environment.NewLine +
                         Environment.NewLine +
                         string.Join(
@@ -1863,8 +1913,16 @@ namespace MAT0943Net.TraspasFacturas.Forms
                                 resultadoValidacion.BaseDatosDestino
                             },
                             {
+                                "FacturesProcessades",
+                                processades
+                            },
+                            {
                                 "FacturesCreades",
                                 creades
+                            },
+                            {
+                                "FacturesRecuperades",
+                                recuperades
                             },
                             {
                                 "ImportTotal",
@@ -1899,7 +1957,7 @@ namespace MAT0943Net.TraspasFacturas.Forms
                     _dgvFactures.Refresh();
 
                     ActualitzarEstat(
-                        creades +
+                        processades +
                         " factures traspassades correctament a " +
                         _empresaDestiSeleccionada +
                         ".");

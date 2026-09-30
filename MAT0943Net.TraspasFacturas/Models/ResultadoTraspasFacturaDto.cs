@@ -14,5 +14,7 @@
 
         public string Error { get; set; } =
             string.Empty;
+
+        public bool Recuperada { get; set; }
     }
 }

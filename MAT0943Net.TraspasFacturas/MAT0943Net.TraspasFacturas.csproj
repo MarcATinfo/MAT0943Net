@@ -53,12 +53,15 @@
     <Compile Include="Infrastructure\UI\DataGridViewCheckBoxHeaderCell.cs" />
     <Compile Include="Infrastructure\UI\TraspasFacturasTheme.cs" />
     <Compile Include="Models\ConfiguracioLogTraspasFacturas.cs" />
+    <Compile Include="Models\FacturaDestinoRecuperacionDto.cs" />
     <Compile Include="Models\FacturaOrigenDto.cs" />
     <Compile Include="Models\LineaFacturaOrigenDto.cs" />
     <Compile Include="Models\ResultadoTraspasFacturaDto.cs" />
     <Compile Include="Models\ResultadoValidacionTraspasoDto.cs" />
+    <Compile Include="Models\VincleTraspasPendienteDto.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Services\ConsultaEmpresasActiveXService.cs" />
+    <Compile Include="Services\ConsultaFacturaDestinoService.cs" />
     <Compile Include="Services\ConsultaFacturasOrigenService.cs" />
     <Compile Include="Services\ConsultaLineasFacturaOrigenService.cs" />
     <Compile Include="Services\ServeiConfiguracioLogTraspasFacturas.cs" />

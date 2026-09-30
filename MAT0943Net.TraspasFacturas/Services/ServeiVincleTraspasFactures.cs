@@ -1,4 +1,5 @@
 ﻿using MAT0943Net.TraspasFacturas.Infrastructure.Connections;
+using MAT0943Net.TraspasFacturas.Models;
 using System;
 using System.Data;
 using System.Data.OleDb;
@@ -117,6 +118,282 @@ namespace MAT0943Net.TraspasFacturas.Services
                     estado,
                     EstadoCreada,
                     StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
+        public void GuardarIdFacvDestinoPendiente(
+            string baseDatosOrigen,
+            decimal idFacvOrigen,
+            decimal idFacvDestino)
+        {
+            if (string.IsNullOrWhiteSpace(baseDatosOrigen))
+            {
+                throw new InvalidOperationException(
+                    "No s'ha informat la base de dades origen.");
+            }
+
+            if (idFacvOrigen <= 0)
+            {
+                throw new InvalidOperationException(
+                    "L'ID de la factura origen no és vàlid.");
+            }
+
+            if (idFacvDestino <= 0)
+            {
+                throw new InvalidOperationException(
+                    "L'ID de la factura destí no és vàlid.");
+            }
+
+            string conexion =
+                TraspasFacturasConnectionStringHelper
+                    .CrearConnexioBaseDades(
+                        baseDatosOrigen);
+
+            const string sql = @"
+                UPDATE dbo.AT_TRASPAS_FACTURES
+                SET
+                    IDFACV_DESTI = ?,
+                    FECHA_TRASPAS = GETDATE()
+                WHERE
+                    BD_ORIGEN = ?
+                    AND IDFACV_ORIGEN = ?
+                    AND ESTADO = ?;";
+
+            using (var connection =
+                   new OleDbConnection(conexion))
+            using (var command =
+                   new OleDbCommand(sql, connection))
+            {
+                command.CommandType =
+                    CommandType.Text;
+
+                /*
+                 * OleDb associa els paràmetres
+                 * estrictament per posició.
+                 */
+                command.Parameters
+                    .Add("IDFACV_DESTI", OleDbType.Decimal)
+                    .Value =
+                        idFacvDestino;
+
+                command.Parameters
+                    .Add("BD_ORIGEN", OleDbType.VarChar, 100)
+                    .Value =
+                        baseDatosOrigen.Trim();
+
+                command.Parameters
+                    .Add("IDFACV_ORIGEN", OleDbType.Decimal)
+                    .Value =
+                        idFacvOrigen;
+
+                command.Parameters
+                    .Add("ESTADO", OleDbType.VarChar, 20)
+                    .Value =
+                        EstadoPendiente;
+
+                connection.Open();
+
+                int afectadas =
+                    command.ExecuteNonQuery();
+
+                if (afectadas != 1)
+                {
+                    throw new InvalidOperationException(
+                        "No s'ha pogut guardar l'ID de la factura destí " +
+                        "al traspàs pendent.");
+                }
+            }
+        }
+
+        public VincleTraspasPendienteDto ObtenerPendiente(
+    string baseDatosOrigen,
+    decimal idFacvOrigen)
+        {
+            if (string.IsNullOrWhiteSpace(baseDatosOrigen))
+            {
+                throw new InvalidOperationException(
+                    "No s'ha informat la base de dades origen.");
+            }
+
+            if (idFacvOrigen <= 0)
+            {
+                throw new InvalidOperationException(
+                    "L'ID de la factura origen no és vàlid.");
+            }
+
+            string conexion =
+                TraspasFacturasConnectionStringHelper
+                    .CrearConnexioBaseDades(
+                        baseDatosOrigen);
+
+            const string sql = @"
+SELECT
+    EMPRESA_DESTI,
+    BD_DESTI,
+    IDFACV_DESTI
+FROM dbo.AT_TRASPAS_FACTURES
+WHERE
+    BD_ORIGEN = ?
+    AND IDFACV_ORIGEN = ?
+    AND ESTADO = ?;";
+
+            using (var connection =
+                   new OleDbConnection(conexion))
+            using (var command =
+                   new OleDbCommand(sql, connection))
+            {
+                command.CommandType =
+                    CommandType.Text;
+
+                command.Parameters
+                    .Add(
+                        "BD_ORIGEN",
+                        OleDbType.VarChar,
+                        100)
+                    .Value =
+                        baseDatosOrigen.Trim();
+
+                command.Parameters
+                    .Add(
+                        "IDFACV_ORIGEN",
+                        OleDbType.Decimal)
+                    .Value =
+                        idFacvOrigen;
+
+                command.Parameters
+                    .Add(
+                        "ESTADO",
+                        OleDbType.VarChar,
+                        20)
+                    .Value =
+                        EstadoPendiente;
+
+                connection.Open();
+
+                using (OleDbDataReader reader =
+                       command.ExecuteReader())
+                {
+                    if (reader == null ||
+                        !reader.Read())
+                    {
+                        return null;
+                    }
+
+                    decimal? idFacvDestino =
+                        null;
+
+                    if (reader["IDFACV_DESTI"] != DBNull.Value)
+                    {
+                        idFacvDestino =
+                            Convert.ToDecimal(
+                                reader["IDFACV_DESTI"]);
+                    }
+
+                    return new VincleTraspasPendienteDto
+                    {
+                        EmpresaDestino =
+                            reader["EMPRESA_DESTI"] == DBNull.Value
+                                ? string.Empty
+                                : Convert.ToString(
+                                    reader["EMPRESA_DESTI"])?.Trim()
+                                  ?? string.Empty,
+
+                        BaseDatosDestino =
+                            reader["BD_DESTI"] == DBNull.Value
+                                ? string.Empty
+                                : Convert.ToString(
+                                    reader["BD_DESTI"])?.Trim()
+                                  ?? string.Empty,
+
+                        IdFacvDestino =
+                            idFacvDestino
+                    };
+                }
+            }
+        }
+
+        public void ReiniciarPendienteParaReintento(
+    string baseDatosOrigen,
+    decimal idFacvOrigen,
+    string empresaDestino,
+    string baseDatosDestino)
+        {
+            string conexion =
+                TraspasFacturasConnectionStringHelper
+                    .CrearConnexioBaseDades(
+                        baseDatosOrigen);
+
+            const string sql = @"
+UPDATE dbo.AT_TRASPAS_FACTURES
+SET
+    EMPRESA_DESTI = ?,
+    BD_DESTI = ?,
+    IDFACV_DESTI = NULL,
+    SERIE_DESTI = NULL,
+    NUMDOC_DESTI = NULL,
+    FECHA_TRASPAS = GETDATE()
+WHERE
+    BD_ORIGEN = ?
+    AND IDFACV_ORIGEN = ?
+    AND ESTADO = ?;";
+
+            using (var connection =
+                   new OleDbConnection(conexion))
+            using (var command =
+                   new OleDbCommand(sql, connection))
+            {
+                command.CommandType =
+                    CommandType.Text;
+
+                command.Parameters
+                    .Add(
+                        "EMPRESA_DESTI",
+                        OleDbType.VarChar,
+                        100)
+                    .Value =
+                        empresaDestino.Trim();
+
+                command.Parameters
+                    .Add(
+                        "BD_DESTI",
+                        OleDbType.VarChar,
+                        100)
+                    .Value =
+                        baseDatosDestino ?? string.Empty;
+
+                command.Parameters
+                    .Add(
+                        "BD_ORIGEN",
+                        OleDbType.VarChar,
+                        100)
+                    .Value =
+                        baseDatosOrigen.Trim();
+
+                command.Parameters
+                    .Add(
+                        "IDFACV_ORIGEN",
+                        OleDbType.Decimal)
+                    .Value =
+                        idFacvOrigen;
+
+                command.Parameters
+                    .Add(
+                        "ESTADO",
+                        OleDbType.VarChar,
+                        20)
+                    .Value =
+                        EstadoPendiente;
+
+                connection.Open();
+
+                int afectadas =
+                    command.ExecuteNonQuery();
+
+                if (afectadas != 1)
+                {
+                    throw new InvalidOperationException(
+                        "No s'ha pogut preparar el traspàs pendent per al reintent.");
+                }
             }
         }
 
@@ -456,7 +733,8 @@ WHERE
 
         public void ValidarDisponibleParaTraspaso(
             string baseDatosOrigen,
-            decimal idFacvOrigen)
+            decimal idFacvOrigen,
+            string empresaDestino)
         {
             if (string.IsNullOrWhiteSpace(baseDatosOrigen))
             {
@@ -496,16 +774,49 @@ WHERE
                 }
 
                 if (string.Equals(
-                        estado,
-                        EstadoPendiente,
-                        StringComparison.OrdinalIgnoreCase))
+                    estado,
+                    EstadoPendiente,
+                    StringComparison.OrdinalIgnoreCase))
                 {
-                    throw new InvalidOperationException(
-                        "La factura ja té un traspàs pendent.");
-                }
+                    VincleTraspasPendienteDto pendiente =
+                        ObtenerPendiente(
+                            baseDatosOrigen,
+                            idFacvOrigen);
 
-                // ERROR es permet:
-                // PrepararTraspaso reutilitzarà el registre.
+                    if (pendiente != null &&
+                        !string.IsNullOrWhiteSpace(
+                            pendiente.EmpresaDestino))
+                    {
+                        string empresaPendiente =
+                            pendiente.EmpresaDestino.Trim();
+
+                        string empresaSeleccionada =
+                            (empresaDestino ?? string.Empty).Trim();
+
+                        if (!string.Equals(
+                                empresaPendiente,
+                                empresaSeleccionada,
+                                StringComparison.OrdinalIgnoreCase))
+                        {
+                            throw new InvalidOperationException(
+                                "La factura té un traspàs pendent cap a l'empresa '" +
+                                empresaPendiente +
+                                "'." +
+                                Environment.NewLine +
+                                "Empresa seleccionada actualment: '" +
+                                empresaSeleccionada +
+                                "'." +
+                                Environment.NewLine +
+                                "Selecciona la mateixa empresa per recuperar-lo.");
+                        }
+                        /*
+                         * Mateixa empresa:
+                         * permetem continuar perquè el servei
+                         * intentarà recuperar el PENDIENTE.
+                         */
+                        return;
+                    }
+                }
             }
         }
     }
