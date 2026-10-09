@@ -1479,8 +1479,25 @@ namespace MAT0943Net.TraspasFacturas.Forms
                     return;
                 }
 
-                _empresaDestiSeleccionada =
-                    _cmbEmpresaDesti.SelectedItem.ToString();
+                try
+                {
+                    string empresaDesti =
+                        _cmbEmpresaDesti.SelectedItem.ToString();
+
+                    _consultaEmpresasService.ValidarEmpresaDisponible(
+                        empresaDesti);
+
+                    _empresaDestiSeleccionada =
+                        empresaDesti;
+                }
+                catch (Exception ex)
+                {
+                    MostrarErrorControlat(
+                        "No s'ha pogut validar l'empresa de destinació.\n\n" +
+                        ex.Message);
+
+                    return;
+                }
 
                 AnarAlPasTraspas();
 

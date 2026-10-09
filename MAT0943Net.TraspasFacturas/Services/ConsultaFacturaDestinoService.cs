@@ -30,12 +30,12 @@ namespace MAT0943Net.TraspasFacturas.Services
                         baseDatosDestino);
 
             const string sql = @"
-SELECT
-    IDFACV,
-    LTRIM(RTRIM(COALESCE(SERIE, ''))) AS SERIE,
-    NUMDOC
-FROM dbo.CABEFACV
-WHERE IDFACV = ?;";
+                SELECT
+                    IDFACV,
+                    LTRIM(RTRIM(COALESCE(SERIE, ''))) AS SERIE,
+                    NUMDOC
+                FROM dbo.CABEFACV
+                WHERE IDFACV = ?;";
 
             using (var connection =
                    new OleDbConnection(conexion))

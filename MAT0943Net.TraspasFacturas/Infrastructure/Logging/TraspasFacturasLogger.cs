@@ -69,7 +69,7 @@ namespace MAT0943Net.TraspasFacturas.Infrastructure.Logging
         }
 
         internal static void AplicarConfiguracioLog(
-            ConfiguracioLogTraspasFacturas configuracio)
+    ConfiguracioLogTraspasFacturas configuracio)
         {
             InicialitzarLogReserva();
 
@@ -77,7 +77,8 @@ namespace MAT0943Net.TraspasFacturas.Infrastructure.Logging
                 !configuracio.ConfiguracioDisponible)
             {
                 Advertencia(
-                    "No s'ha trobat configuració de log de l'importador. Es continua amb el log local de reserva.");
+                    "No s'ha trobat configuració del log de traspàs de factures. " +
+                    "Es continua amb el log local de reserva.");
 
                 return;
             }
@@ -85,28 +86,25 @@ namespace MAT0943Net.TraspasFacturas.Infrastructure.Logging
             if (!configuracio.LogActiu)
             {
                 Advertencia(
-                    "La configuració ha desactivat el log operatiu de l'importador.");
+                    "La configuració ha desactivat el log de traspàs de factures.");
 
                 lock (SyncRoot)
                 {
-                    logActiu =
-                        false;
-
-                    errorsFatalsOberturaActius =
-                        true;
+                    logActiu = false;
+                    errorsFatalsOberturaActius = true;
                 }
 
                 return;
             }
 
             string rutaConfigurada =
-                (configuracio.RutaLog ?? string.Empty)
-                .Trim();
+                (configuracio.RutaLog ?? string.Empty).Trim();
 
             if (string.IsNullOrWhiteSpace(rutaConfigurada))
             {
                 Advertencia(
-                    "La configuració del log de l'importador no informa cap ruta. Es continua amb el log local de reserva.");
+                    "La configuració del log de traspàs de factures no informa cap ruta. " +
+                    "Es continua amb el log local de reserva.");
 
                 return;
             }
@@ -114,29 +112,22 @@ namespace MAT0943Net.TraspasFacturas.Infrastructure.Logging
             Exception errorPreparantRuta;
 
             if (!IntentarPrepararRuta(
-                rutaConfigurada,
-                out errorPreparantRuta))
+                    rutaConfigurada,
+                    out errorPreparantRuta))
             {
                 Error(
-                    "No s'ha pogut utilitzar la ruta configurada del log de l'importador. Es continua amb el log local de reserva.",
+                    "No s'ha pogut utilitzar la ruta configurada del log de traspàs de factures. " +
+                    "Es continua amb el log local de reserva.",
                     errorPreparantRuta);
 
                 return;
             }
 
-            Informacio(
-                "El log operatiu continua a la ruta configurada.");
-
             lock (SyncRoot)
             {
-                rutaBase =
-                    rutaConfigurada;
-
-                logActiu =
-                    true;
-
-                errorsFatalsOberturaActius =
-                    true;
+                rutaBase = rutaConfigurada;
+                logActiu = true;
+                errorsFatalsOberturaActius = true;
             }
 
             NetejarLogsAnticsEnRuta(
@@ -144,7 +135,7 @@ namespace MAT0943Net.TraspasFacturas.Infrastructure.Logging
                 7);
 
             Informacio(
-                "El logger s'ha inicialitzat des del log local de reserva.");
+                "El logger s'ha inicialitzat amb la ruta configurada.");
         }
 
         public static void Configurar(

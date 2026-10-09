@@ -23,6 +23,15 @@ namespace MAT0943Net.TraspasFacturas.Services
                 idFacvOrigen,
                 empresaDestino);
 
+            if (ServeiVincleTraspasFacturesActiveX.IntentarPrepararTraspaso(
+                    baseDatosOrigen,
+                    idFacvOrigen,
+                    empresaDestino,
+                    baseDatosDestino))
+            {
+                return;
+            }
+
             string conexion =
                 TraspasFacturasConnectionStringHelper
                     .CrearConnexioBaseDades(
@@ -80,6 +89,10 @@ namespace MAT0943Net.TraspasFacturas.Services
                     empresaDestino,
                     baseDatosDestino);
             }
+
+            ServeiVincleTraspasFacturesActiveX.RegistrarConnexioOleDb(
+                nameof(PrepararTraspaso),
+                baseDatosOrigen);
         }
 
         public bool EstaTraspassada(
@@ -98,6 +111,15 @@ namespace MAT0943Net.TraspasFacturas.Services
                     "L'ID de la factura origen no és vàlid.");
             }
 
+            bool estaTraspassada;
+            if (ServeiVincleTraspasFacturesActiveX.IntentarEstaTraspassada(
+                    baseDatosOrigen,
+                    idFacvOrigen,
+                    out estaTraspassada))
+            {
+                return estaTraspassada;
+            }
+
             string conexion =
                 TraspasFacturasConnectionStringHelper
                     .CrearConnexioBaseDades(
@@ -114,10 +136,16 @@ namespace MAT0943Net.TraspasFacturas.Services
                         baseDatosOrigen,
                         idFacvOrigen);
 
-                return string.Equals(
+                bool resultat = string.Equals(
                     estado,
                     EstadoCreada,
                     StringComparison.OrdinalIgnoreCase);
+
+                ServeiVincleTraspasFacturesActiveX.RegistrarConnexioOleDb(
+                    nameof(EstaTraspassada),
+                    baseDatosOrigen);
+
+                return resultat;
             }
         }
 
@@ -142,6 +170,14 @@ namespace MAT0943Net.TraspasFacturas.Services
             {
                 throw new InvalidOperationException(
                     "L'ID de la factura destí no és vàlid.");
+            }
+
+            if (ServeiVincleTraspasFacturesActiveX.IntentarGuardarIdFacvDestinoPendiente(
+                    baseDatosOrigen,
+                    idFacvOrigen,
+                    idFacvDestino))
+            {
+                return;
             }
 
             string conexion =
@@ -203,11 +239,13 @@ namespace MAT0943Net.TraspasFacturas.Services
                         "al traspàs pendent.");
                 }
             }
+
+            ServeiVincleTraspasFacturesActiveX.RegistrarConnexioOleDb(
+                nameof(GuardarIdFacvDestinoPendiente),
+                baseDatosOrigen);
         }
 
-        public VincleTraspasPendienteDto ObtenerPendiente(
-    string baseDatosOrigen,
-    decimal idFacvOrigen)
+        public VincleTraspasPendienteDto ObtenerPendiente(string baseDatosOrigen, decimal idFacvOrigen)
         {
             if (string.IsNullOrWhiteSpace(baseDatosOrigen))
             {
@@ -221,21 +259,30 @@ namespace MAT0943Net.TraspasFacturas.Services
                     "L'ID de la factura origen no és vàlid.");
             }
 
+            VincleTraspasPendienteDto pendiente;
+            if (ServeiVincleTraspasFacturesActiveX.IntentarObtenerPendiente(
+                    baseDatosOrigen,
+                    idFacvOrigen,
+                    out pendiente))
+            {
+                return pendiente;
+            }
+
             string conexion =
                 TraspasFacturasConnectionStringHelper
                     .CrearConnexioBaseDades(
                         baseDatosOrigen);
 
             const string sql = @"
-SELECT
-    EMPRESA_DESTI,
-    BD_DESTI,
-    IDFACV_DESTI
-FROM dbo.AT_TRASPAS_FACTURES
-WHERE
-    BD_ORIGEN = ?
-    AND IDFACV_ORIGEN = ?
-    AND ESTADO = ?;";
+                SELECT
+                    EMPRESA_DESTI,
+                    BD_DESTI,
+                    IDFACV_DESTI
+                FROM dbo.AT_TRASPAS_FACTURES
+                WHERE
+                    BD_ORIGEN = ?
+                    AND IDFACV_ORIGEN = ?
+                    AND ESTADO = ?;";
 
             using (var connection =
                    new OleDbConnection(conexion))
@@ -276,6 +323,10 @@ WHERE
                     if (reader == null ||
                         !reader.Read())
                     {
+                        ServeiVincleTraspasFacturesActiveX.RegistrarConnexioOleDb(
+                            nameof(ObtenerPendiente),
+                            baseDatosOrigen);
+
                         return null;
                     }
 
@@ -289,7 +340,7 @@ WHERE
                                 reader["IDFACV_DESTI"]);
                     }
 
-                    return new VincleTraspasPendienteDto
+                    pendiente = new VincleTraspasPendienteDto
                     {
                         EmpresaDestino =
                             reader["EMPRESA_DESTI"] == DBNull.Value
@@ -308,34 +359,49 @@ WHERE
                         IdFacvDestino =
                             idFacvDestino
                     };
+
+                    ServeiVincleTraspasFacturesActiveX.RegistrarConnexioOleDb(
+                        nameof(ObtenerPendiente),
+                        baseDatosOrigen);
+
+                    return pendiente;
                 }
             }
         }
 
         public void ReiniciarPendienteParaReintento(
-    string baseDatosOrigen,
-    decimal idFacvOrigen,
-    string empresaDestino,
-    string baseDatosDestino)
+            string baseDatosOrigen,
+            decimal idFacvOrigen,
+            string empresaDestino,
+            string baseDatosDestino)
         {
+            if (ServeiVincleTraspasFacturesActiveX.IntentarReiniciarPendienteParaReintento(
+                    baseDatosOrigen,
+                    idFacvOrigen,
+                    empresaDestino,
+                    baseDatosDestino))
+            {
+                return;
+            }
+
             string conexion =
                 TraspasFacturasConnectionStringHelper
                     .CrearConnexioBaseDades(
                         baseDatosOrigen);
 
             const string sql = @"
-UPDATE dbo.AT_TRASPAS_FACTURES
-SET
-    EMPRESA_DESTI = ?,
-    BD_DESTI = ?,
-    IDFACV_DESTI = NULL,
-    SERIE_DESTI = NULL,
-    NUMDOC_DESTI = NULL,
-    FECHA_TRASPAS = GETDATE()
-WHERE
-    BD_ORIGEN = ?
-    AND IDFACV_ORIGEN = ?
-    AND ESTADO = ?;";
+                UPDATE dbo.AT_TRASPAS_FACTURES
+                SET
+                    EMPRESA_DESTI = ?,
+                    BD_DESTI = ?,
+                    IDFACV_DESTI = NULL,
+                    SERIE_DESTI = NULL,
+                    NUMDOC_DESTI = NULL,
+                    FECHA_TRASPAS = GETDATE()
+                WHERE
+                    BD_ORIGEN = ?
+                    AND IDFACV_ORIGEN = ?
+                    AND ESTADO = ?;";
 
             using (var connection =
                    new OleDbConnection(conexion))
@@ -395,6 +461,10 @@ WHERE
                         "No s'ha pogut preparar el traspàs pendent per al reintent.");
                 }
             }
+
+            ServeiVincleTraspasFacturesActiveX.RegistrarConnexioOleDb(
+                nameof(ReiniciarPendienteParaReintento),
+                baseDatosOrigen);
         }
 
         public void MarcarCreada(
@@ -406,24 +476,36 @@ WHERE
             string serieDestino,
             decimal numDocDestino)
         {
+            if (ServeiVincleTraspasFacturesActiveX.IntentarMarcarCreada(
+                    baseDatosOrigen,
+                    idFacvOrigen,
+                    empresaDestino,
+                    baseDatosDestino,
+                    idFacvDestino,
+                    serieDestino,
+                    numDocDestino))
+            {
+                return;
+            }
+
             string conexion =
                 TraspasFacturasConnectionStringHelper
                     .CrearConnexioBaseDades(
                         baseDatosOrigen);
 
             const string sql = @"
-UPDATE dbo.AT_TRASPAS_FACTURES
-SET
-    EMPRESA_DESTI = ?,
-    BD_DESTI = ?,
-    IDFACV_DESTI = ?,
-    SERIE_DESTI = ?,
-    NUMDOC_DESTI = ?,
-    FECHA_TRASPAS = GETDATE(),
-    ESTADO = ?
-WHERE
-    BD_ORIGEN = ?
-    AND IDFACV_ORIGEN = ?;";
+                UPDATE dbo.AT_TRASPAS_FACTURES
+                SET
+                    EMPRESA_DESTI = ?,
+                    BD_DESTI = ?,
+                    IDFACV_DESTI = ?,
+                    SERIE_DESTI = ?,
+                    NUMDOC_DESTI = ?,
+                    FECHA_TRASPAS = GETDATE(),
+                    ESTADO = ?
+                WHERE
+                    BD_ORIGEN = ?
+                    AND IDFACV_ORIGEN = ?;";
 
             using (var connection =
                    new OleDbConnection(conexion))
@@ -484,6 +566,10 @@ WHERE
                         "No s'ha pogut marcar el traspàs com a CREADA.");
                 }
             }
+
+            ServeiVincleTraspasFacturesActiveX.RegistrarConnexioOleDb(
+                nameof(MarcarCreada),
+                baseDatosOrigen);
         }
 
         public void MarcarError(
@@ -491,19 +577,26 @@ WHERE
             decimal idFacvOrigen,
             string empresaDestino)
         {
+            if (ServeiVincleTraspasFacturesActiveX.IntentarMarcarError(
+                    baseDatosOrigen,
+                    idFacvOrigen))
+            {
+                return;
+            }
+
             string conexion =
                 TraspasFacturasConnectionStringHelper
                     .CrearConnexioBaseDades(
                         baseDatosOrigen);
 
             const string sql = @"
-UPDATE dbo.AT_TRASPAS_FACTURES
-SET
-    ESTADO = ?,
-    FECHA_TRASPAS = GETDATE()
-WHERE
-    BD_ORIGEN = ?
-    AND IDFACV_ORIGEN = ?;";
+                UPDATE dbo.AT_TRASPAS_FACTURES
+                SET
+                    ESTADO = ?,
+                    FECHA_TRASPAS = GETDATE()
+                WHERE
+                    BD_ORIGEN = ?
+                    AND IDFACV_ORIGEN = ?;";
 
             using (var connection =
                    new OleDbConnection(conexion))
@@ -532,6 +625,10 @@ WHERE
 
                 command.ExecuteNonQuery();
             }
+
+            ServeiVincleTraspasFacturesActiveX.RegistrarConnexioOleDb(
+                nameof(MarcarError),
+                baseDatosOrigen);
         }
 
         private static string ObtenerEstado(
@@ -540,11 +637,11 @@ WHERE
             decimal idFacvOrigen)
         {
             const string sql = @"
-SELECT ESTADO
-FROM dbo.AT_TRASPAS_FACTURES
-WHERE
-    BD_ORIGEN = ?
-    AND IDFACV_ORIGEN = ?;";
+                SELECT ESTADO
+                FROM dbo.AT_TRASPAS_FACTURES
+                WHERE
+                    BD_ORIGEN = ?
+                    AND IDFACV_ORIGEN = ?;";
 
             using (var command =
                    new OleDbCommand(sql, connection))
@@ -584,30 +681,30 @@ WHERE
             string baseDatosDestino)
         {
             const string sql = @"
-INSERT INTO dbo.AT_TRASPAS_FACTURES
-(
-    BD_ORIGEN,
-    IDFACV_ORIGEN,
-    EMPRESA_DESTI,
-    BD_DESTI,
-    IDFACV_DESTI,
-    SERIE_DESTI,
-    NUMDOC_DESTI,
-    FECHA_TRASPAS,
-    ESTADO
-)
-VALUES
-(
-    ?,
-    ?,
-    ?,
-    ?,
-    NULL,
-    NULL,
-    NULL,
-    GETDATE(),
-    ?
-);";
+                INSERT INTO dbo.AT_TRASPAS_FACTURES
+                (
+                    BD_ORIGEN,
+                    IDFACV_ORIGEN,
+                    EMPRESA_DESTI,
+                    BD_DESTI,
+                    IDFACV_DESTI,
+                    SERIE_DESTI,
+                    NUMDOC_DESTI,
+                    FECHA_TRASPAS,
+                    ESTADO
+                )
+                VALUES
+                (
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    NULL,
+                    NULL,
+                    NULL,
+                    GETDATE(),
+                    ?
+                );";
 
             using (var command =
                    new OleDbCommand(sql, connection))
@@ -652,18 +749,18 @@ VALUES
             string baseDatosDestino)
         {
             const string sql = @"
-UPDATE dbo.AT_TRASPAS_FACTURES
-SET
-    EMPRESA_DESTI = ?,
-    BD_DESTI = ?,
-    IDFACV_DESTI = NULL,
-    SERIE_DESTI = NULL,
-    NUMDOC_DESTI = NULL,
-    FECHA_TRASPAS = GETDATE(),
-    ESTADO = ?
-WHERE
-    BD_ORIGEN = ?
-    AND IDFACV_ORIGEN = ?;";
+                UPDATE dbo.AT_TRASPAS_FACTURES
+                SET
+                    EMPRESA_DESTI = ?,
+                    BD_DESTI = ?,
+                    IDFACV_DESTI = NULL,
+                    SERIE_DESTI = NULL,
+                    NUMDOC_DESTI = NULL,
+                    FECHA_TRASPAS = GETDATE(),
+                    ESTADO = ?
+                WHERE
+                    BD_ORIGEN = ?
+                    AND IDFACV_ORIGEN = ?;";
 
             using (var command =
                    new OleDbCommand(sql, connection))
@@ -748,6 +845,14 @@ WHERE
                     "L'ID de la factura origen no és vàlid.");
             }
 
+            if (ServeiVincleTraspasFacturesActiveX.IntentarValidarDisponibleParaTraspaso(
+                    baseDatosOrigen,
+                    idFacvOrigen,
+                    empresaDestino))
+            {
+                return;
+            }
+
             string conexion =
                 TraspasFacturasConnectionStringHelper
                     .CrearConnexioBaseDades(
@@ -814,10 +919,18 @@ WHERE
                          * permetem continuar perquè el servei
                          * intentarà recuperar el PENDIENTE.
                          */
+                        ServeiVincleTraspasFacturesActiveX.RegistrarConnexioOleDb(
+                            nameof(ValidarDisponibleParaTraspaso),
+                            baseDatosOrigen);
+
                         return;
                     }
                 }
             }
+
+            ServeiVincleTraspasFacturesActiveX.RegistrarConnexioOleDb(
+                nameof(ValidarDisponibleParaTraspaso),
+                baseDatosOrigen);
         }
     }
 }

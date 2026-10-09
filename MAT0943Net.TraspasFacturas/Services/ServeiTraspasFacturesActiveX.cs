@@ -303,18 +303,18 @@ namespace MAT0943Net.TraspasFacturas.Services
                             "Es tornarà a intentar el traspàs.",
                             new Dictionary<string, object>
                             {
-                {
-                    "FacturaOrigen",
-                    facturaOrigen.Factura
-                },
-                {
-                    "IDFACVOrigen",
-                    facturaOrigen.IdFacv
-                },
-                {
-                    "EmpresaDesti",
-                    empresaDestino
-                }
+                                {
+                                    "FacturaOrigen",
+                                    facturaOrigen.Factura
+                                },
+                                {
+                                    "IDFACVOrigen",
+                                    facturaOrigen.IdFacv
+                                },
+                                {
+                                    "EmpresaDesti",
+                                    empresaDestino
+                                }
                             });
                     }
 
@@ -364,7 +364,7 @@ namespace MAT0943Net.TraspasFacturas.Services
                                 "EmpresaDesti",
                                 empresaDestino
                             }
-        });
+                        });
                 }
 
                 string usuario =
@@ -490,68 +490,23 @@ namespace MAT0943Net.TraspasFacturas.Services
                 factura.CalcularImpuestosyTotales();
 
                 decimal idDocumento =
-     Convert.ToDecimal(
-         factura.Anade());
+                    Convert.ToDecimal(factura.Anade());
 
-                idDocumentoCreat =
-                    idDocumento;
-
-                facturaEnEdicion =
-                    false;
+                idDocumentoCreat = idDocumento;
+                facturaEnEdicion = false;
 
                 /*
                  * A partir d'aquí la factura ja existeix
                  * físicament a l'empresa destí.
-                 *
-                 * Ho marquem ABANS de qualsevol altra
-                 * operació perquè, si falla alguna cosa,
-                 * el vincle no es converteixi en ERROR.
                  */
-                facturaCreada =
-                    true;
+                facturaCreada = true;
 
-                resultado.IdDocumento =
-                    idDocumento;
+                resultado.IdDocumento = idDocumento;
 
                 /*
-                 * Guardem immediatament l'IDFACV destí
-                 * mentre el vincle continua PENDIENTE.
-                 *
-                 * Així, si el procés falla abans de
-                 * MarcarCreada(), podrem identificar
-                 * exactament la factura que ja existeix.
+                 * Recuperem les dades de la factura mentre
+                 * la sessió de destinació continua activa.
                  */
-                _serveiVincle.GuardarIdFacvDestinoPendiente(
-                    baseDatosOrigen,
-                    facturaOrigen.IdFacv,
-                    idDocumento);
-
-                TraspasFacturasLogger.Debug(
-                    "S'ha guardat l'ID de la factura destí al vincle pendent.",
-                    new Dictionary<string, object>
-                    {
-                        {
-                            "FacturaOrigen",
-                            facturaOrigen.Factura
-                        },
-                        {
-                            "IDFACVOrigen",
-                            facturaOrigen.IdFacv
-                        },
-                        {
-                            "EmpresaDesti",
-                            empresaDestino
-                        },
-                        {
-                            "BaseDadesDesti",
-                            baseDatosDestino
-                        },
-                        {
-                            "IDFACVDesti",
-                            idDocumento
-                        }
-                    });
-
                 resultado.Serie =
                     factura.AsStringCab["SERIE"]
                     ?? string.Empty;
@@ -572,6 +527,56 @@ namespace MAT0943Net.TraspasFacturas.Services
                         resultado.NumDoc +
                         "'.");
                 }
+
+                /*
+                 * IMPORTANT:
+                 * abans de tornar a operar contra l'empresa origen,
+                 * finalitzem completament la sessió ActiveX destí.
+                 */
+                if (factura != null &&
+                    facturaIniciada)
+                {
+                    factura.Acabar();
+                    facturaIniciada = false;
+                }
+
+                if (enlace != null &&
+                    enlace.Estado ==
+                    a3ERPActiveX.EstadoEnlace.estACTIVO)
+                {
+                    enlace.Acabar();
+                }
+
+                TraspasFacturasLogger.Debug(
+                    "S'ha finalitzat la sessió ActiveX de l'empresa destí abans d'actualitzar el vincle origen.",
+                    new Dictionary<string, object>
+                    {
+                        { "FacturaOrigen", facturaOrigen.Factura },
+                        { "IDFACVOrigen", facturaOrigen.IdFacv },
+                        { "EmpresaDesti", empresaDestino },
+                        { "IDFACVDesti", idDocumento }
+                    });
+
+                /*
+                 * Ara ja no hi ha cap sessió ActiveX destí activa.
+                 * Podem tornar a l'empresa origen per actualitzar
+                 * AT_TRASPAS_FACTURES.
+                 */
+                _serveiVincle.GuardarIdFacvDestinoPendiente(
+                    baseDatosOrigen,
+                    facturaOrigen.IdFacv,
+                    idDocumento);
+
+                TraspasFacturasLogger.Debug(
+                    "S'ha guardat l'ID de la factura destí al vincle pendent.",
+                    new Dictionary<string, object>
+                    {
+                        { "FacturaOrigen", facturaOrigen.Factura },
+                        { "IDFACVOrigen", facturaOrigen.IdFacv },
+                        { "EmpresaDesti", empresaDestino },
+                        { "BaseDadesDesti", baseDatosDestino },
+                        { "IDFACVDesti", idDocumento }
+                    });
 
                 _serveiVincle.MarcarCreada(
                     baseDatosOrigen,

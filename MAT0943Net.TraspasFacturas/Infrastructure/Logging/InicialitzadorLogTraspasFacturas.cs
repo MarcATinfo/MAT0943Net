@@ -21,17 +21,12 @@ namespace MAT0943Net.TraspasFacturas.Infrastructure.Logging
 
             try
             {
-                string cadenaConnexio =
-                    TraspasFacturasConnectionStringHelper
-                        .CrearConnexioBaseDades(
-                            baseDatosOrigen);
-
                 ServeiConfiguracioLogTraspasFacturas serveiConfiguracio =
                     new ServeiConfiguracioLogTraspasFacturas();
 
                 configuracio =
                     serveiConfiguracio.Carregar(
-                        cadenaConnexio);
+                        baseDatosOrigen);
             }
             catch (Exception ex)
             {
